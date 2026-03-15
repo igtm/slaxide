@@ -1,0 +1,14 @@
+[package]
+name = "slaxide-core"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+chrono.workspace = true
+regex.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+

@@ -1,0 +1,13 @@
+[package]
+name = "slaxide-linux-gtk"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+chrono.workspace = true
+gtk.workspace = true
+relm4.workspace = true
+slaxide-core = { path = "../slaxide-core" }
+
