@@ -17,13 +17,14 @@ resolver = "2"
 [workspace.package]
 edition = "2024"
 license = "MIT"
-rust-version = "1.93"
+rust-version = "1.92"
 version = "0.1.0"
 
 [workspace.dependencies]
 anyhow = "1.0.100"
 async-trait = "0.1.89"
 chrono = { version = "0.4.42", features = ["serde"] }
+emojis = "0.8.0"
 futures-util = "0.3.32"
 gtk = { package = "gtk4", version = "0.10.3" }
 keyring = "4.0.0-rc.3"
@@ -37,8 +38,9 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 tempfile = "3.23.0"
 thiserror = "2.0.17"
+toml = "0.8.23"
 tokio = { version = "1.50.0", features = ["macros", "net", "rt-multi-thread", "sync", "time"] }
-tokio-tungstenite = "0.28.0"
+tokio-tungstenite = { version = "0.28.0", features = ["rustls-tls-webpki-roots"] }
 tracing = "0.1.41"
 url = { version = "2.5.7", features = ["serde"] }
 uuid = { version = "1.18.1", features = ["serde", "v4"] }

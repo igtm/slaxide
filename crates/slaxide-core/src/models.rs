@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -15,6 +16,15 @@ pub struct AttachmentSummary {
     pub title: String,
     pub url: Option<String>,
     pub mime: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReactionSummary {
+    pub name: String,
+    pub emoji: String,
+    pub count: u32,
+    #[serde(default)]
+    pub me: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -45,7 +55,13 @@ pub struct TimelineItem {
     pub thread_ts: String,
     pub author_id: String,
     pub author_name: String,
+    #[serde(default)]
+    pub author_avatar_path: Option<String>,
     pub body: String,
+    #[serde(default)]
+    pub rich_text_blocks: Vec<Value>,
+    #[serde(default)]
+    pub reactions: Vec<ReactionSummary>,
     pub attachments: Vec<AttachmentSummary>,
     pub unread: bool,
     pub participant: bool,

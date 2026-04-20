@@ -1,5 +1,7 @@
 use std::{
     collections::HashMap,
+    path::Path,
+    process::Command,
     sync::{Arc, Mutex},
 };
 
@@ -7,7 +9,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use keyring::use_native_store;
 use keyring_core::{Entry, Error as KeyringError};
-use notify_rust::{Notification, Urgency};
+use notify_rust::{Hint, Notification, Urgency};
 use slaxide_core::NotificationAction;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -17,6 +19,8 @@ pub struct NotificationRequest {
     pub action: NotificationAction,
     pub icon: Option<String>,
     pub category: Option<String>,
+    pub sound_name: Option<String>,
+    pub default_action_target: Option<String>,
 }
 
 #[async_trait]
@@ -30,7 +34,24 @@ pub trait SecretStore: Send + Sync {
     fn delete_secret(&self, account: &str) -> Result<()>;
 }
 
-pub struct NotifyRustBackend;
+#[derive(Clone, Default)]
+pub struct NotifyRustBackend {
+    activation_handler: Option<Arc<dyn Fn(String) + Send + Sync>>,
+}
+
+impl NotifyRustBackend {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_activation_handler(
+        mut self,
+        handler: impl Fn(String) + Send + Sync + 'static,
+    ) -> Self {
+        self.activation_handler = Some(Arc::new(handler));
+        self
+    }
+}
 
 #[async_trait]
 impl NotificationBackend for NotifyRustBackend {
@@ -45,8 +66,61 @@ impl NotificationBackend for NotifyRustBackend {
         if let Some(category) = &request.category {
             notification.appname(category);
         }
-        notification.show()?;
+        if let Some(sound_name) = &request.sound_name {
+            notification.hint(Hint::SuppressSound(true));
+            notification.hint(Hint::SoundName(sound_name.clone()));
+        }
+        if request.default_action_target.is_some() {
+            notification.action("default", "Open");
+        }
+        let handle = notification.show()?;
+        if let Some(sound_name) = &request.sound_name {
+            play_sound_name(sound_name);
+        }
+        if let (Some(target), Some(handler)) = (
+            request.default_action_target.clone(),
+            self.activation_handler.clone(),
+        ) {
+            handle.wait_for_action(move |action| {
+                if action == "default" {
+                    handler(target);
+                }
+            });
+        }
         Ok(())
+    }
+}
+
+fn play_sound_name(sound_name: &str) {
+    let canberra_status = Command::new("canberra-gtk-play")
+        .args(["-i", sound_name])
+        .status();
+    match canberra_status {
+        Ok(status) if status.success() => return,
+        Ok(status) => {
+            eprintln!(
+                "[slaxide] notification sound fallback: canberra-gtk-play exited with {status}"
+            );
+        }
+        Err(error) => {
+            eprintln!("[slaxide] notification sound fallback: canberra-gtk-play failed: {error}");
+        }
+    }
+
+    let candidate_path = format!("/usr/share/sounds/freedesktop/stereo/{sound_name}.oga");
+    if !Path::new(&candidate_path).exists() {
+        eprintln!("[slaxide] notification sound file missing: {candidate_path}");
+        return;
+    }
+
+    match Command::new("paplay").arg(&candidate_path).status() {
+        Ok(status) if status.success() => {}
+        Ok(status) => {
+            eprintln!("[slaxide] notification sound playback failed: paplay exited with {status}");
+        }
+        Err(error) => {
+            eprintln!("[slaxide] notification sound playback failed: {error}");
+        }
     }
 }
 
@@ -156,6 +230,8 @@ mod tests {
             action: NotificationAction::Critical,
             icon: None,
             category: None,
+            sound_name: Some("message-new-instant".into()),
+            default_action_target: Some("1".into()),
         };
 
         assert_eq!(map_urgency(request.action), notify_rust::Urgency::Critical);

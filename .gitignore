@@ -16,3 +16,4 @@ target
 # RustRover
 # JetBrains specific template can be added globally if needed.
 # .idea/
+.env

@@ -6,8 +6,20 @@ rust-version.workspace = true
 version.workspace = true
 
 [dependencies]
+anyhow.workspace = true
 chrono.workspace = true
+emojis.workspace = true
 gtk.workspace = true
 relm4.workspace = true
 slaxide-core = { path = "../slaxide-core" }
-
+slaxide-platform = { path = "../slaxide-platform" }
+slaxide-slack = { path = "../slaxide-slack" }
+slaxide-store = { path = "../slaxide-store" }
+serde.workspace = true
+serde_json.workspace = true
+reqwest.workspace = true
+regex.workspace = true
+toml.workspace = true
+tokio.workspace = true
+url.workspace = true
+uuid.workspace = true

@@ -1,0 +1,108 @@
+theme_id = "tokyo_night_storm"
+active_search_profile_id = "release_focus"
+default_channel_permission = "read_write"
+
+[office]
+channel_profile_id = "times_channels"
+
+[slack]
+client_id = "your-client-id"
+client_secret = "your-client-secret"
+redirect_uri = "https://127.0.0.1/slack/callback"
+user_scopes = "channels:history,channels:read,channels:write,channels:write.invites,groups:history,groups:read,groups:write,groups:write.invites,chat:write,files:read,files:write,reactions:read,reactions:write,users:read"
+app_token = "xapp-..."
+
+[shortcuts]
+open_settings = ["<Ctrl>comma"]
+open_admin = ["<Ctrl><Shift>a"]
+focus_search = ["<Ctrl>k"]
+focus_composer = ["<Ctrl>n"]
+close_column = ["<Ctrl>w", "Escape"]
+
+[channel_permissions]
+C-finance = "read_only"
+C-secrets = "hidden"
+
+[timeline]
+watched_channels = ["C-eng", "C-release", "C-incident"]
+muted_channels = ["C-random"]
+focus_keywords = ["ship", "incident", "prod"]
+focus_threshold = 75.0
+recent_window_days = 7
+
+[timeline.channel_weights]
+C-eng = 2
+C-release = 3
+C-incident = 4
+
+[[keyword_profiles]]
+id = "shipping_terms"
+label = "Shipping terms"
+mode = "allow"
+matchers = [
+  { text = "ship" },
+  { text = "release" },
+]
+
+[[keyword_profiles]]
+id = "wip_noise"
+label = "WIP noise"
+mode = "deny"
+matchers = [
+  { text = "wip" },
+  { regex = "draft|brainstorm" },
+]
+
+[[channel_profiles]]
+id = "release_channels"
+label = "Release channels"
+mode = "allow"
+channels = ["C-release", "C-incident"]
+channel_name_matchers = []
+
+[[channel_profiles]]
+id = "times_channels"
+label = "Times channels"
+mode = "allow"
+channels = []
+channel_name_matchers = [
+  { regex = "^times_" },
+]
+
+[[section_profiles]]
+id = "release_section"
+label = "Release section"
+channels = ["C-release", "C-incident"]
+channel_name_matchers = []
+
+[[author_profiles]]
+id = "leadership"
+label = "Leadership"
+mode = "allow"
+authors = ["U-lead", "U-pm"]
+
+[[search_profiles]]
+id = "release_focus"
+label = "Release Focus"
+query = "ship"
+keyword_profiles = ["shipping_terms", "wip_noise"]
+section_profiles = ["release_section"]
+channel_profiles = ["release_channels"]
+author_profiles = ["leadership"]
+
+[[search_profiles]]
+id = "times_only"
+label = "Times only"
+channel_profiles = ["times_channels"]
+
+[[notification_rules]]
+id = "cb4c4788-3cdb-4c74-b0aa-bd8db0c85c59"
+label = "Release profile"
+enabled = true
+keyword_profile_ids = ["shipping_terms", "wip_noise"]
+section_profile_ids = ["release_section"]
+channel_profile_ids = ["release_channels"]
+author_profile_ids = ["leadership"]
+search_profile_ids = ["release_focus"]
+thread_participation_only = false
+action = "notify"

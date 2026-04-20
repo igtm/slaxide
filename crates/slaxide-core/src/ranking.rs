@@ -33,9 +33,10 @@ impl TimelineRanker {
 
         ranked.sort_by(|left, right| {
             right
-                .score
-                .total_cmp(&left.score)
-                .then_with(|| right.item.last_activity_at.cmp(&left.item.last_activity_at))
+                .item
+                .last_activity_at
+                .cmp(&left.item.last_activity_at)
+                .then_with(|| right.score.total_cmp(&left.score))
         });
         ranked
     }
@@ -53,7 +54,7 @@ impl TimelineRanker {
                     !policy.muted_channels.contains(&ranked.item.channel_id)
                         && ranked.score >= policy.focus_threshold
                 }
-                TimelineMode::Recent => policy.is_watched(&ranked.item.channel_id),
+                TimelineMode::Recent => policy.is_effectively_watched(&ranked.item.channel_id),
             })
             .collect()
     }
@@ -63,7 +64,7 @@ impl TimelineRanker {
         policy: &TimelinePolicy,
         item: TimelineItem,
     ) -> Option<RankedTimelineItem> {
-        let watched = policy.is_watched(&item.channel_id);
+        let watched = policy.is_effectively_watched(&item.channel_id);
         let important = item.direct_mention
             || item.participant
             || !item.focus_keyword_hits.is_empty()
@@ -164,5 +165,40 @@ mod tests {
 
         assert!(!recent.is_empty());
         assert!(focus.is_empty());
+    }
+
+    #[test]
+    fn recent_mode_falls_back_to_all_channels_when_watch_list_is_empty() {
+        let mut settings = sample_settings();
+        settings.timeline.watched_channels.clear();
+        settings.timeline.channel_weights.clear();
+        let now = Utc::now() + Duration::minutes(5);
+        let ranker = TimelineRanker::new(now);
+
+        let recent =
+            ranker.visible_items(TimelineMode::Recent, &settings.timeline, sample_timeline());
+
+        assert!(!recent.is_empty());
+        assert!(
+            recent.iter().any(|item| item.item.channel_id == "C-random"),
+            "recent should not go empty just because watched_channels is unset"
+        );
+    }
+
+    #[test]
+    fn visible_items_are_sorted_newest_first() {
+        let settings = sample_settings();
+        let now = Utc::now() + Duration::minutes(5);
+        let ranker = TimelineRanker::new(now);
+
+        let ranked =
+            ranker.visible_items(TimelineMode::Recent, &settings.timeline, sample_timeline());
+
+        assert!(ranked.len() >= 2);
+        assert!(
+            ranked
+                .windows(2)
+                .all(|pair| pair[0].item.last_activity_at >= pair[1].item.last_activity_at)
+        );
     }
 }
